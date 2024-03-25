@@ -39,6 +39,8 @@ declarations
   OtherIngredientCost: array(Products) of real
   ProductionCost: array(Products) of real ! Other Ingredient production cost
 
+
+  ! Mix Properties
   TomatoProperties: array(Contents, Varieties) of real
   ProductProperties: array(Contents, Products) of real
 
@@ -58,7 +60,6 @@ declarations
 	Make: array(Products, PeriodNumbers) of mpvar
 	Sell: array(Products, PeriodNumbers) of mpvar
 	Stock: array(Products, PeriodNumbers) of mpvar
-	Store: array(Products, PeriodNumbers) of mpvar
 
 
 	! Material Optimising Quantities
@@ -106,7 +107,7 @@ end-do
 
 ! Demand
 forall(p in Products, m in PeriodNumbers) do
-  DemandCS(p,m) := Sell(p,m) <= Contract(p) + Demand(p)
+  DemandCS(p,m) := Sell(p,m) <= (Contract(p) + Demand(p))
 end-do
 
 ! Manufacture
@@ -114,41 +115,42 @@ forall(p in Products, m in PeriodNumbers) do
   ManufactureCS(p,m) := Make(p,m) <= ProductionLimit(p)
 end-do
 
-! Availability
+! Availability 
 forall(v in Varieties, m in PeriodNumbers) do
   AvailabilityCS(v,m) := VarietyUsed(v,m) <= TomatoSupply(v,m)
 end-do
 
 ! Storage
 forall(m in PeriodNumbers) do
-  sum(p in Products) Stock(p,m) <= WarehouseSize
+  TotalStock(m) := sum(p in Products) Stock(p,m)
+  TotalStock(m) <= WarehouseSize
 end-do
 
 
 ! Establishing Relationship between VarietyUsed and MixProduced
 forall(m in PeriodNumbers, p in Products, c in Contents) do
-  MixCS(m,p,c) := sum(v in Varieties) TomatoProperties(c,v) * VarietyUsed(v,m) =
-  MixProduced(p,m) * ProductProperties(c,p)
+  MixContents(m,p,c) := sum(v in Varieties) TomatoProperties(c,v) * VarietyUsed(v,m)
+  MixCS(m,p,c) := MixProduced(p,m) * ProductProperties(c,p) = MixContents(m,p,c)
 end-do
 
 
 ! Establishing Relationship between MixProduced and Make
 forall(p in Products, m in PeriodNumbers) do
-  VarietyUsedCS(p,m) := Make(p,m) =
+  MixProducedCS(p,m) := Make(p,m) =
   (1 + OtherIngredientFactor(p)) *
   ProductReduction(p) * MixProduced(p,m)
 end-do
 
-! Establishing Relationship between Store, Stock, Make and Sell
+! Establishing Relationship between Stock, Make and Sell
 forall(p in Products, m in PeriodNumbers) do
 	if m = 1 then
 		InventoryCS(p, m) := Stock(p, m) = Stock(p, NPeriods) + Make(p, m) - Sell(p, m)
-		StorageCS(p, m) := Store(p, m) = Stock(p, NPeriods) + Make(p, m)
 	else
 		InventoryCS(p, m) := Stock(p, m) = Stock(p, m-1)     + Make(p, m) - Sell(p, m)
-		StorageCS(p, m) := Store(p, m) = Stock(p, m-1) + Make(p, m)
 	end-if
 end-do
+
+
 
 ! Objective Function ----------------------------------------------------------------------------
 
@@ -172,7 +174,10 @@ ProductReduction(p) * OtherIngredientFactor(p) * MixProduced(p,m) * OtherIngredi
 ProdCost := sum(p in Products, m in PeriodNumbers)
 MixProduced(p,m) * ProductionCost(p)
 
-TotalCost := TotalMaterialCost + OtherIngredCost + ProdCost
+WarehouseStorageCost := sum(p in Products, m in PeriodNumbers)
+Stock(p,m) * StorageCost
+
+TotalCost := TotalMaterialCost + OtherIngredCost + ProdCost + WarehouseStorageCost
 
 
 ! Objective Function
@@ -188,28 +193,12 @@ forall(p in Products) do
   forall(m in PeriodNumbers) do
     write("In ", PeriodNames(m), ": ")
     write("make ", strfmt(getsol(Make(p, m)),3), "; ")
-    write("store ", strfmt(getsol(Store(p, m)),3), "; ")
     write("sell ", strfmt(getsol(Sell(p, m)),3), "; ")
     write("stock ", strfmt(getsol(Stock(p, m)),3))
     writeln
   end-do
 end-do
 
-writeln
-forall(m in PeriodNumbers) do
-  write("In ", PeriodNames(m), ": ")
-  write("production ", strfmt(sum(p in Products) getsol(Make(p, m)),5))
-  writeln
-end-do
-
-writeln
-forall(m in PeriodNumbers) do
-  write("In ", PeriodNames(m), ": ")
-  write("space used ", strfmt(sum(p in Products) getsol(Stock(p, m)),5))
-  writeln
-end-do
-write("  Total space used ", strfmt(sum(m in PeriodNumbers, p in Products) getsol(Stock(p, m)),5))
-writeln
 
 writeln
 forall(v in Varieties) do
@@ -223,7 +212,22 @@ forall(v in Varieties) do
 end-do
 
 writeln
+forall(p in Products) do
+  writeln
+  writeln("Product: ", p)
+  forall(m in PeriodNumbers) do
+    write("In ", PeriodNames(m), ": ")
+    write("mix produced ", strfmt(getsol(MixProduced(p, m)),3))
+    writeln
+  end-do
+end-do
+
+
+
+writeln
 writeln("Total Profit = £", strfmt(getsol(TotalIncome),6))
+
+writeln("Demand Profit = £", strfmt(getsol(DemandProfit),6))
 
 
 ! Print to CSV ----------------------------------------------------------------------------------
