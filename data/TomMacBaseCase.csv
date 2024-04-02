@@ -15,6 +15,21 @@ Oct-Dec,Juice,846.5909091,1000,0,677.2727273
 Oct-Dec,Sauce,2108,2000,108,2395.454545
 Oct-Dec,Paste,784.8484848,3500,2131.439394,1569.69697
 Oct-Dec,Canned,5000,5000,0,5000
+
+Period, Variety, Variety Used
+Jan-Mar,Beef,1500
+Jan-Mar,Plum,4183.333333
+Jan-Mar,Moneymaker,4000
+Apr-Jun,Beef,2643.636364
+Apr-Jun,Plum,5500
+Apr-Jun,Moneymaker,8865.454545
+Jul-Sep,Beef,4146.212121
+Jul-Sep,Plum,9678.787879
+Jul-Sep,Moneymaker,13000
+Oct-Dec,Beef,1500
+Oct-Dec,Plum,4142.424242
+Oct-Dec,Moneymaker,4000
+
 Overall Metrics
 Total Profit = 24423.64318
 Total Income = 138076.3068
