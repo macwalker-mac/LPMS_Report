@@ -1,0 +1,264 @@
+Base case: 
+Jan-Mar
+Product, Make, Sell, Store
+Juice,1000,1000,  0
+Sauce,1892,2000,  0
+Paste,866.667,2500,  0
+Canned,5000,5000,  0
+
+Apr-Jun
+Product, Make, Sell, Store
+Juice,2000,2000,  0
+Sauce,3000,3000,  0
+Paste,3589.7,3500,89.697
+Canned,5000,5000,  0
+
+Jul-Sep
+Product, Make, Sell, Store
+Juice,2000,2000,  0
+Sauce,4410.3,3000,1410.3
+Paste,7000,3500,3589.7
+Canned,5000,5000,  0
+
+Oct-Dec
+Product, Make, Sell, Store
+Juice,1848.23,1848.23,  0
+Sauce,697.697,2000,108
+Paste,1319.05,3275.42,1633.33
+Canned,5000,5000,  0
+
+---------------------- Strategic Decisions ----------------------
+
+No Strategic Decisions 
+
+Jan-Mar
+Product, Make, Sell, Store
+Juice,1000,1000,  0
+Sauce,1408,2000,  0
+Paste,1350,2816,  0
+Canned,5400,5400,  0
+
+Apr-Jun
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,3200,3200,  0
+Paste,4216,3700,516
+Canned,5400,5400,  0
+
+Jul-Sep
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,4384,3200,1184
+Paste,7000,3700,3816
+Canned,5400,5400,  0
+
+Oct-Dec
+Product, Make, Sell, Store
+Juice,1000,1000,  0
+Sauce,1408,2000,592
+Paste,1350,3700,1466
+Canned,5400,5400,  0
+
+Rent New Warehouse   
+Jan-Mar
+Product, Make, Sell, Store
+Juice,1000,1000,  0
+Sauce,1408,2000,  0
+Paste,1350,2816,  0
+Canned,5400,5400,  0
+
+Apr-Jun
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,3200,3200,  0
+Paste,4216,3700,516
+Canned,5400,5400,  0
+
+Jul-Sep
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,4384,3200,1184
+Paste,7000,3700,3816
+Canned,5400,5400,  0
+
+Oct-Dec
+Product, Make, Sell, Store
+Juice,1000,1000,  0
+Sauce,1408,2000,592
+Paste,1350,3700,1466
+Canned,5400,5400,  0
+
+Enter New Contract   
+Jan-Mar
+Product, Make, Sell, Store
+Juice,1347.73,1347.73,  0
+Sauce,1000,1000,  0
+Paste,1442.73,3700,  0
+Canned,5400,5400,  0
+
+Apr-Jun
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,3200,3200,  0
+Paste,4771.76,3700,1071.76
+Canned,5400,5400,  0
+
+Jul-Sep
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,3828.24,3200,628.235
+Paste,7000,3700,4371.76
+Canned,5400,5400,  0
+
+Oct-Dec
+Product, Make, Sell, Store
+Juice,1883.16,1883.16,  0
+Sauce,371.765,1000,  0
+Paste,1585.51,3700,2257.27
+Canned,5400,5400,  0
+
+Rent New Warehouse   Enter New Contract   
+Jan-Mar
+Product, Make, Sell, Store
+Juice,1347.73,1347.73,  0
+Sauce,1000,1000,  0
+Paste,1442.73,3700,  0
+Canned,5400,5400,  0
+
+Apr-Jun
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,3200,3200,  0
+Paste,4771.76,3700,1071.76
+Canned,5400,5400,  0
+
+Jul-Sep
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,3828.24,3200,628.235
+Paste,7000,3700,4371.76
+Canned,5400,5400,  0
+
+Oct-Dec
+Product, Make, Sell, Store
+Juice,1883.16,1883.16,  0
+Sauce,371.765,1000,  0
+Paste,1585.51,3700,2257.27
+Canned,5400,5400,  0
+
+Increase Production Capcity
+Jan-Mar
+Product, Make, Sell, Store
+Juice,1000,1000,  0
+Sauce,1808,2000,  0
+Paste,895.455,2695.45,  0
+Canned,5400,5400,  0
+
+Apr-Jun
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,3200,3200,  0
+Paste,3700,3700,  0
+Canned,5400,5400,  0
+
+Jul-Sep
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,3500,3200,300
+Paste,8400,3700,4700
+Canned,5400,5400,  0
+
+Oct-Dec
+Product, Make, Sell, Store
+Juice,1000,1000,  0
+Sauce,1892,2000,192
+Paste,800,3700,1800
+Canned,5400,5400,  0
+
+Rent New Warehouse   Increase Production Capcity
+Jan-Mar
+Product, Make, Sell, Store
+Juice,1000,1000,  0
+Sauce,1808,2000,  0
+Paste,895.455,2695.45,  0
+Canned,5400,5400,  0
+
+Apr-Jun
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,3200,3200,  0
+Paste,3700,3700,  0
+Canned,5400,5400,  0
+
+Jul-Sep
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,3500,3200,300
+Paste,8400,3700,4700
+Canned,5400,5400,  0
+
+Oct-Dec
+Product, Make, Sell, Store
+Juice,1000,1000,  0
+Sauce,1892,2000,192
+Paste,800,3700,1800
+Canned,5400,5400,  0
+
+Enter New Contract   Increase Production Capcity
+Jan-Mar
+Product, Make, Sell, Store
+Juice,1347.73,1347.73,  0
+Sauce,1000,1000,  0
+Paste,1442.73,3700,  0
+Canned,5400,5400,  0
+
+Apr-Jun
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,3200,3200,  0
+Paste,3700,3700,  0
+Canned,5400,5400,  0
+
+Jul-Sep
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,3500,3200,300
+Paste,8400,3700,4700
+Canned,5400,5400,  0
+
+Oct-Dec
+Product, Make, Sell, Store
+Juice,1841.19,1841.19,  0
+Sauce,700,1000,  0
+Paste,1257.27,3700,2257.27
+Canned,5400,5400,  0
+
+Rent New Warehouse   Enter New Contract   Increase Production Capcity
+Jan-Mar
+Product, Make, Sell, Store
+Juice,1347.73,1347.73,  0
+Sauce,1000,1000,  0
+Paste,1442.73,3700,  0
+Canned,5400,5400,  0
+
+Apr-Jun
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,3200,3200,  0
+Paste,3700,3700,  0
+Canned,5400,5400,  0
+
+Jul-Sep
+Product, Make, Sell, Store
+Juice,2200,2200,  0
+Sauce,3500,3200,300
+Paste,8400,3700,4700
+Canned,5400,5400,  0
+
+Oct-Dec
+Product, Make, Sell, Store
+Juice,1841.19,1841.19,  0
+Sauce,700,1000,  0
+Paste,1257.27,3700,2257.27
+Canned,5400,5400,  0
+
