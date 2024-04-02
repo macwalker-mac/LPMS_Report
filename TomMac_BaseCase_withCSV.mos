@@ -313,7 +313,7 @@ forall(p in Products, m in PeriodNumbers) do
   DemandCS(p,m) := Sold(p,m) <= (Contract(p) + (1 + DemandChange/100)*Demand(p))
 end-do
 
-! wage uncertainty
+! Wage Uncertainty
 ! This stays the same so it is not implemented
 
 !Report results to a .csv file for further processing in Excel
@@ -332,6 +332,22 @@ forall(m in PeriodNumbers) do
         writeln
     end-do
 end-do
+
+writeln 
+
+! Report Vareties Used each month
+writeln("Period, Variety, Variety Used")
+forall(m in PeriodNumbers) do
+  forall(v in Varieties) do
+  write(PeriodNames(m), ",", v)
+    TomatoUsed(v,m) := sum(p in Products) VarietyUsed(v,p,m)
+    write(",", getsol(TomatoUsed(v,m)))
+    writeln
+  end-do
+end-do
+
+writeln 
+
 
 ! Add a section for overall metrics if necessary
 writeln("Overall Metrics")
