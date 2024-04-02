@@ -1,0 +1,614 @@
+model TomMacBase
+
+uses "mmxprs"
+
+! Declarations -----------------------------------------------------------------------------------
+
+declarations
+
+  ! Decision Variables
+  Products: set of string
+  Varieties: set of string
+  Contents: set of string
+  PeriodNames: set of string
+
+  ! Time Variables
+  NPeriods = 4
+  PeriodNumbers = 1..NPeriods
+
+  ! Constraints
+  WarehouseSize: real
+  TomatoSupply: array(Varieties, PeriodNumbers) of real
+  TomatoCost: array(Varieties, PeriodNumbers) of real
+  Demand: array(Products) of real
+  ProductionLimit: array(Products) of real
+  Contract: array(Products) of real
+
+  ! Objective Function Quantities
+  StorageCost: real
+  SalePrice: array(Products) of real
+  ContractPrice: array(Products) of real
+
+  ! Further Information
+  ProductReduction: array(Products) of real
+  OtherIngredientFactor: array(Products) of real
+  OtherIngredientCost: array(Products) of real
+  ProductionCost: array(Products) of real ! Other Ingredient production cost
+
+  ! Mix Properties
+  TomatoProperties: array(Contents, Varieties) of real
+  ProductProperties: array(Contents, Products) of real
+
+	! Further Consultation
+	NewWarehouseSize: real
+	NewWarehouseCost: real
+
+	NewProductionIncrease: real
+	NewProductionCost: real
+
+	NewContract: array(Products) of real
+	NewContractPrice: array(Products) of real
+
+  ! from TomMacPlan
+  PriceChange: real
+  DemandChange: real
+  ProductionCostChange: real
+
+	! Decision Variables
+	VarietyUsed: array(Varieties, Products, PeriodNumbers) of mpvar
+	Sold: array(Products, PeriodNumbers) of mpvar
+	Stock: array(Products, PeriodNumbers) of mpvar
+
+	! Derviative Decision Variables
+	Make: array(Products, PeriodNumbers) of mpvar
+	MixProduced: array(Products, PeriodNumbers) of mpvar
+
+end-declarations
+
+! Initialisations --------------------------------------------------------------------------------
+
+initialisations from "TomMac.dat"
+
+  Products Varieties Contents
+  ProductReduction OtherIngredientFactor OtherIngredientCost
+  ProductionCost TomatoProperties ProductProperties
+  StorageCost WarehouseSize
+
+  NewWarehouseSize NewProductionCost
+  NewProductionIncrease NewWarehouseCost
+
+end-initialisations
+
+initialisations from "TomMacQuarters.dat"
+
+  PeriodNames TomatoSupply TomatoCost
+  Demand SalePrice
+  Contract ContractPrice
+  ProductionLimit
+
+  NewContract NewContractPrice
+
+end-initialisations
+
+initialisations from "TomMacPlan.dat"
+
+  PriceChange
+  DemandChange
+  ProductionCostChange
+
+end-initialisations
+
+! Constraints ------------------------------------------------------------------------------------
+
+! Contracts
+forall(p in Products, m in PeriodNumbers) do
+  ContractCS(p,m) := Sold(p,m) >= Contract(p)
+end-do
+
+! Demand
+forall(p in Products, m in PeriodNumbers) do
+  DemandCS(p,m) := Sold(p,m) <= (Contract(p) + Demand(p))
+end-do
+
+! Availability
+forall(v in Varieties, m in PeriodNumbers) do
+  AvailabilityCS(v,m) := sum(p in Products) VarietyUsed(v,p,m) <= TomatoSupply(v,m)
+end-do
+
+! Storage
+forall(m in PeriodNumbers) do
+  TotalStock(m) := sum(p in Products) Stock(p,m)
+  StockCS(m) := TotalStock(m) <= WarehouseSize
+end-do
+
+! Establishing relationship between mixtures
+forall(p in Products, c in Contents, m in PeriodNumbers) do
+  State(p,c,m) := sum(v in Varieties) VarietyUsed(v,p,m) * TomatoProperties(c,v)
+  MixtureCS(p,c,m) := State(p,c,m) = ProductProperties(c,p) * MixProduced(p,m)
+end-do
+
+! Establishing Relationship between MixProduced and Make
+forall(p in Products, m in PeriodNumbers) do
+
+  MixProducedCS_Below(p,m) := 0.98 * (1 + OtherIngredientFactor(p)) *
+  ProductReduction(p) * MixProduced(p,m) <= Make(p,m) 
+  
+  MixProducedCS_Above(p,m) := Make(p,m) <=
+  1.02 * (1 + OtherIngredientFactor(p)) *
+  ProductReduction(p) * MixProduced(p,m)
+  
+end-do
+
+! Manufacture
+forall(p in Products, m in PeriodNumbers) do
+  ManufactureCS(p,m) := Make(p,m) <= ProductionLimit(p)
+end-do
+
+! Establishing Relationship between Stock, Make and Sell
+forall(p in Products, m in PeriodNumbers) do
+	if m = 1 then
+		InventoryCS(p, m) := Stock(p, m) = Stock(p, NPeriods) + Make(p, m) - Sold(p, m)
+	else
+		InventoryCS(p, m) := Stock(p, m) = Stock(p, m-1)     + Make(p, m) - Sold(p, m)
+	end-if
+end-do
+
+
+! Objective Function ----------------------------------------------------------------------------
+
+! Profits
+ContractIncome := NPeriods * sum(p in Products) Contract(p) * ContractPrice(p)
+
+DemandIncome := sum(p in Products, m in PeriodNumbers) (Sold(p,m) - Contract(p))  * SalePrice(p)
+
+TotalIncome := ContractIncome + DemandIncome
+
+! Costs
+TotalMaterialCost := sum(p in Products, v in Varieties, m in PeriodNumbers)
+TomatoCost(v,m) * VarietyUsed(v,p,m)
+
+OtherIngredCost := sum(p in Products, m in PeriodNumbers)
+ProductReduction(p) * OtherIngredientFactor(p) * MixProduced(p,m) * OtherIngredientCost(p)
+
+ProdCost := sum(p in Products, m in PeriodNumbers)
+Make(p,m) * ProductionCost(p)
+
+WarehouseStorageCost := sum(p in Products, m in PeriodNumbers)
+Stock(p,m) * StorageCost
+
+TotalCost := TotalMaterialCost + OtherIngredCost + ProdCost + WarehouseStorageCost
+
+! Objective Function
+TotalProfit := TotalIncome - TotalCost
+
+maximise(TotalProfit)
+
+! Print Locally ---------------------------------------------------------------------------------
+
+writeln
+writeln("Products:")
+forall (m in PeriodNumbers) do
+  writeln("In ", PeriodNames(m), ": ")
+  writeln("Product  ", " Make  ", " Sell  ", " Store ")
+  forall(p in Products) do
+    writeln(p, "   ", strfmt(getsol(Make(p, m)),3), "   ",  strfmt(getsol(Sold(p, m)),3), "   ",  strfmt(getsol(Stock(p, m)),3))
+  end-do
+  writeln
+end-do
+
+writeln("Variety used (in each period):")
+write("Period")
+forall(v in Varieties) do
+  write("  ", v)
+end-do
+writeln
+forall(m in PeriodNumbers) do
+  write(PeriodNames(m), "   ")
+  forall(v in Varieties) do
+    write(strfmt(sum(p in Products) getsol(VarietyUsed(v, p, m)),3), "   ")
+  end-do
+  writeln
+end-do
+
+!forall(p in Products) do
+!  forall(v in Varieties) do
+!    writeln
+!    writeln("Variety: ", v)
+!    forall(m in PeriodNumbers) do
+!      write("In ", PeriodNames(m), ": ")
+!      write("used ", strfmt(getsol(VarietyUsed(v,p, m)),3))
+!      writeln
+!    end-do
+!  end-do
+!end-do
+
+!writeln
+!forall(p in Products) do
+!  writeln
+!  writeln("Product: ", p)
+!  forall(m in PeriodNumbers) do
+!    write("In ", PeriodNames(m), ": ")
+!    write("mix produced ", strfmt(getsol(MixProduced(p, m)),3))
+!    writeln
+!  end-do
+!end-do
+
+writeln
+writeln("Total Profit = £", strfmt(getsol(TotalProfit),6))
+writeln("Total Income = £", strfmt(getsol(TotalIncome),6))
+writeln("Total Cost = £", strfmt(getsol(TotalCost),6))
+
+! BASE MODEL COMPLETE ---------------------------------------------------------------------------------
+
+
+
+! Strategic Decisions with Base Model -----------------------------------------------------------------
+
+
+! Rent New Warehouse
+
+forall(m in PeriodNumbers) do
+  TotalStock(m) := sum(p in Products) Stock(p,m)
+  StockCS(m) := TotalStock(m) <= (WarehouseSize + NewWarehouseSize)
+end-do
+
+TotalCost := TotalMaterialCost + OtherIngredCost + ProdCost + WarehouseStorageCost + NewWarehouseCost
+TotalProfit := TotalIncome - TotalCost
+maximise(TotalProfit)
+
+writeln
+writeln("Renting another warehouse gives: ")
+writeln("Total Profit = £", strfmt(getsol(TotalProfit),6))
+writeln("Total Income = £", strfmt(getsol(TotalIncome),6))
+writeln("Total Cost = £", strfmt(getsol(TotalCost),6))
+
+
+! Sign new contract
+
+forall(m in PeriodNumbers) do
+  TotalStock(m) := sum(p in Products) Stock(p,m)
+  StockCS(m) := TotalStock(m) <= WarehouseSize
+end-do
+
+forall(p in Products, m in PeriodNumbers) do
+  ContractCS(p,m) := Sold(p,m) >= NewContract(p)
+end-do
+
+ContractIncome := NPeriods * sum(p in Products) NewContract(p) * NewContractPrice(p)
+
+TotalIncome := ContractIncome + DemandIncome
+TotalCost := TotalMaterialCost + OtherIngredCost + ProdCost + WarehouseStorageCost
+TotalProfit := TotalIncome - TotalCost
+maximise(TotalProfit)
+
+writeln
+writeln("Signing new contract gives: ")
+writeln("Total Profit = £", strfmt(getsol(TotalProfit),6))
+writeln("Total Income = £", strfmt(getsol(TotalIncome),6))
+writeln("Total Cost = £", strfmt(getsol(TotalCost),6))
+
+
+! Increase production capacity by 20%
+
+forall(p in Products, m in PeriodNumbers) do
+  ManufactureCS(p,m) := Make(p,m) <= (1 + NewProductionIncrease/100)*ProductionLimit(p)
+end-do
+
+forall(p in Products, m in PeriodNumbers) do
+  ContractCS(p,m) := Sold(p,m) >= Contract(p)
+end-do
+
+ContractIncome := NPeriods * sum(p in Products) Contract(p) * ContractPrice(p)
+
+TotalIncome := ContractIncome + DemandIncome
+TotalCost := TotalMaterialCost + OtherIngredCost + ProdCost + WarehouseStorageCost + NewProductionCost
+TotalProfit := TotalIncome - TotalCost
+maximise(TotalProfit)
+
+writeln
+writeln("Increasing production capacity by 20% gives: ")
+writeln("Total Profit = £", strfmt(getsol(TotalProfit),6))
+writeln("Total Income = £", strfmt(getsol(TotalIncome),6))
+writeln("Total Cost = £", strfmt(getsol(TotalCost),6))
+
+! This replicates what it said in the notes that none of these base cases is worth taking
+
+
+
+
+! Strategic Decisions with Expected Changes --------------------------------------------------------
+
+! Now we add the changes from TomMacPlan to get new results
+
+writeln
+writeln("Scenario changes:")
+
+! Product price increase
+!TotalIncome = (1 + PriceChange/100)*(ContractIncome + DemandIncome)
+
+! Demand increase
+!forall(p in Products, m in PeriodNumbers) do
+!  DemandCS(p,m) := Sold(p,m) <= (Contract(p) + (1 + DemandChange/100)*Demand(p))
+!end-do
+
+! Wage Uncertainty
+! This stays the same so it is not implemented
+
+! Now model the 8 strategic decisions
+
+! Printing Locally --------------------------------------------------------------------------------
+iter := 1
+
+writeln
+write("No strategic decisions")
+repeat
+
+  ! Constraints ------------------------------------------------------------------------------------
+  
+  ! Contracts
+  forall(p in Products, m in PeriodNumbers) do
+    ContractCS(p,m) := Sold(p,m) >= Contract(p)
+  end-do
+  
+  ! Demand
+  forall(p in Products, m in PeriodNumbers) do
+    DemandCS(p,m) := Sold(p,m) <= (Contract(p) + (1 + DemandChange/100)*Demand(p))
+  end-do
+  
+  ! Availability
+  forall(v in Varieties, m in PeriodNumbers) do
+    AvailabilityCS(v,m) := sum(p in Products) VarietyUsed(v,p,m) <= TomatoSupply(v,m)
+  end-do
+  
+  ! Storage
+  forall(m in PeriodNumbers) do
+    TotalStock(m) := sum(p in Products) Stock(p,m)
+    TotalStock(m) <= WarehouseSize
+  end-do
+  
+  ! Establishing relationship between mixtures
+  forall(p in Products, c in Contents, m in PeriodNumbers) do
+    State(p,c,m) := sum(v in Varieties) VarietyUsed(v,p,m) * TomatoProperties(c,v)
+    MixtureCS(p,c,m) := State(p,c,m) = ProductProperties(c,p) * MixProduced(p,m)
+  end-do
+  
+  ! Establishing Relationship between MixProduced and Make
+  forall(p in Products, m in PeriodNumbers) do
+  
+    MixProducedCS_Below(p,m) := 0.98 * (1 + OtherIngredientFactor(p)) *
+    ProductReduction(p) * MixProduced(p,m) <= Make(p,m) 
+    
+    MixProducedCS_Above(p,m) := Make(p,m) <=
+    1.02 * (1 + OtherIngredientFactor(p)) *
+    ProductReduction(p) * MixProduced(p,m)
+    
+  end-do
+  ! Manufacture
+  forall(p in Products, m in PeriodNumbers) do
+    ManufactureCS(p,m) := Make(p,m) <= ProductionLimit(p)
+  end-do
+  
+  ! Establishing Relationship between Stock, Make and Sell
+  forall(p in Products, m in PeriodNumbers) do
+  	if m = 1 then
+  		InventoryCS(p, m) := Stock(p, m) = Stock(p, NPeriods) + Make(p, m) - Sold(p, m)
+  	else
+  		InventoryCS(p, m) := Stock(p, m) = Stock(p, m-1)     + Make(p, m) - Sold(p, m)
+  	end-if
+  end-do
+  
+  ! Objective Function ----------------------------------------------------------------------------
+  
+  ! Incomes
+  ContractIncome := NPeriods * sum(p in Products)
+  Contract(p) * ContractPrice(p)
+  
+  DemandIncome := sum(p in Products, m in PeriodNumbers)
+  (Sold(p,m) - Contract(p))  * SalePrice(p)
+  
+  ! Costs
+  TotalMaterialCost := sum(p in Products, v in Varieties, m in PeriodNumbers)
+  TomatoCost(v,m) * VarietyUsed(v,p,m)
+  
+  OtherIngredCost := sum(p in Products, m in PeriodNumbers)
+  ProductReduction(p) * OtherIngredientFactor(p) * MixProduced(p,m) * OtherIngredientCost(p)
+  
+  ProdCost := sum(p in Products, m in PeriodNumbers)
+  Make(p,m) * ProductionCost(p)
+  
+  WarehouseStorageCost := sum(p in Products, m in PeriodNumbers)
+  Stock(p,m) * StorageCost
+  
+  TotalCost := TotalMaterialCost + OtherIngredCost + ProdCost + WarehouseStorageCost
+  
+    ! Strategic decision - Warehouse
+  if (iter = 2 or iter = 4 or iter = 6 or iter = 8) then
+    write("Rent New Warehouse   ")
+    forall(m in PeriodNumbers) do
+      TotalStock(m) := sum(p in Products) Stock(p,m)
+      StockCS(m) := TotalStock(m) <= (WarehouseSize + NewWarehouseSize)
+    end-do
+    TotalCost := TotalCost + NewWarehouseCost
+  end-if
+
+  ! Strategic decision - new contract
+  if (iter = 3 or iter = 4 or iter = 7 or iter = 8) then
+    write("Enter New Contract   ")
+    forall(p in Products, m in PeriodNumbers) do
+      ContractCS(p,m) := Sold(p,m) >= NewContract(p)
+    end-do
+    ContractIncome := NPeriods * sum(p in Products) NewContract(p) * NewContractPrice(p)
+  end-if
+
+  ! Strategic decision - increased production capacity
+  if (iter = 5 or iter = 6 or iter = 7 or iter = 8) then
+    write("Increase Production Capacity   ")
+    forall(p in Products, m in PeriodNumbers) do
+      ManufactureCS(p,m) := Make(p,m) <= (1 + NewProductionIncrease/100)*ProductionLimit(p)
+    end-do
+    TotalCost := TotalCost + NewProductionCost
+  end-if
+  writeln
+  
+  TotalIncome := (1 + PriceChange/100)*(ContractIncome + DemandIncome)
+  
+  ! Objective Function
+  TotalProfit := TotalIncome - TotalCost
+  
+  maximise(TotalIncome)
+
+  writeln("Total Profit = £", strfmt(getsol(TotalProfit),6))
+  writeln("Total Income = £", strfmt(getsol(TotalIncome),6))
+  writeln("Total Cost = £", strfmt(getsol(TotalCost),6))
+  writeln
+
+  ! next iteration
+  iter := iter + 1
+until iter > 8
+
+! Printing tp CSV -------------------------------------------------------------------------------
+
+! First, open the CSV file where you want to write the results
+fopen("TomMacStrategicDecisionsResults_withMixChange.csv", F_OUTPUT)
+
+! Write the header to the CSV file
+writeln("Scenario,Total Profit,Total Income,Total Cost")
+
+! Initialize the iteration variable
+iter := 1
+
+! Now begin the repeat loop to calculate and write each scenario's results to the CSV file
+repeat
+
+  ! Constraints ------------------------------------------------------------------------------------
+  
+  ! Contracts
+  forall(p in Products, m in PeriodNumbers) do
+    ContractCS(p,m) := Sold(p,m) >= Contract(p)
+  end-do
+  
+  ! Demand
+  forall(p in Products, m in PeriodNumbers) do
+    DemandCS(p,m) := Sold(p,m) <= (Contract(p) + (1 + DemandChange/100)*Demand(p))
+  end-do
+  
+  ! Availability
+  forall(v in Varieties, m in PeriodNumbers) do
+    AvailabilityCS(v,m) := sum(p in Products) VarietyUsed(v,p,m) <= TomatoSupply(v,m)
+  end-do
+  
+  ! Storage
+  forall(m in PeriodNumbers) do
+    TotalStock(m) := sum(p in Products) Stock(p,m)
+    TotalStock(m) <= WarehouseSize
+  end-do
+  
+  ! Establishing relationship between mixtures
+  forall(p in Products, c in Contents, m in PeriodNumbers) do
+    State(p,c,m) := sum(v in Varieties) VarietyUsed(v,p,m) * TomatoProperties(c,v)
+    MixtureCS(p,c,m) := State(p,c,m) = ProductProperties(c,p) * MixProduced(p,m)
+  end-do
+  
+  ! Establishing Relationship between MixProduced and Make
+  forall(p in Products, m in PeriodNumbers) do
+  
+    MixProducedCS_Below(p,m) := 0.98 * (1 + OtherIngredientFactor(p)) *
+    ProductReduction(p) * MixProduced(p,m) <= Make(p,m) 
+    
+    MixProducedCS_Above(p,m) := Make(p,m) <=
+    1.02 * (1 + OtherIngredientFactor(p)) *
+    ProductReduction(p) * MixProduced(p,m)
+    
+  end-do
+  
+  ! Manufacture
+  forall(p in Products, m in PeriodNumbers) do
+    ManufactureCS(p,m) := Make(p,m) <= ProductionLimit(p)
+  end-do
+  
+  ! Establishing Relationship between Stock, Make and Sell
+  forall(p in Products, m in PeriodNumbers) do
+  	if m = 1 then
+  		InventoryCS(p, m) := Stock(p, m) = Stock(p, NPeriods) + Make(p, m) - Sold(p, m)
+  	else
+  		InventoryCS(p, m) := Stock(p, m) = Stock(p, m-1)     + Make(p, m) - Sold(p, m)
+  	end-if
+  end-do
+  
+  ! Objective Function ----------------------------------------------------------------------------
+  
+  ! Incomes
+  ContractIncome := NPeriods * sum(p in Products)
+  Contract(p) * ContractPrice(p)
+  
+  DemandIncome := sum(p in Products, m in PeriodNumbers)
+  (Sold(p,m) - Contract(p))  * SalePrice(p)
+  
+  ! Costs
+  TotalMaterialCost := sum(p in Products, v in Varieties, m in PeriodNumbers)
+  TomatoCost(v,m) * VarietyUsed(v,p,m)
+  
+  OtherIngredCost := sum(p in Products, m in PeriodNumbers)
+  ProductReduction(p) * OtherIngredientFactor(p) * MixProduced(p,m) * OtherIngredientCost(p)
+  
+  ProdCost := sum(p in Products, m in PeriodNumbers)
+  Make(p,m) * ProductionCost(p)
+  
+  WarehouseStorageCost := sum(p in Products, m in PeriodNumbers)
+  Stock(p,m) * StorageCost
+  
+  TotalCost := TotalMaterialCost + OtherIngredCost + ProdCost + WarehouseStorageCost
+  
+    ! Strategic decision - Warehouse
+  if (iter = 2 or iter = 4 or iter = 6 or iter = 8) then
+    write("Rent New Warehouse   ")
+    forall(m in PeriodNumbers) do
+      TotalStock(m) := sum(p in Products) Stock(p,m)
+      StockCS(m) := TotalStock(m) <= (WarehouseSize + NewWarehouseSize)
+    end-do
+    TotalCost := TotalCost + NewWarehouseCost
+  end-if
+
+  ! Strategic decision - new contract
+  if (iter = 3 or iter = 4 or iter = 7 or iter = 8) then
+    write("Enter New Contract   ")
+    forall(p in Products, m in PeriodNumbers) do
+      ContractCS(p,m) := Sold(p,m) >= NewContract(p)
+    end-do
+    ContractIncome := NPeriods * sum(p in Products) NewContract(p) * NewContractPrice(p)
+  end-if
+
+  ! Strategic decision - increased production capacity
+  if (iter = 5 or iter = 6 or iter = 7 or iter = 8) then
+    write("Increase Production Capacity   ")
+    forall(p in Products, m in PeriodNumbers) do
+      ManufactureCS(p,m) := Make(p,m) <= (1 + NewProductionIncrease/100)*ProductionLimit(p)
+    end-do
+    TotalCost := TotalCost + NewProductionCost
+  end-if
+  writeln
+  
+  TotalIncome := (1 + PriceChange/100)*(ContractIncome + DemandIncome)
+  
+  ! Objective Function
+  TotalProfit := TotalIncome - TotalCost
+  
+  maximise(TotalIncome)
+
+  ! Convert the dynamic content like TotalProfit, TotalIncome, and TotalCost to strings
+  ! and write them along with the iteration info to the CSV file.
+  writeln(iter, ",", getsol(TotalProfit), ",", getsol(TotalIncome), ",", getsol(TotalCost))
+
+  ! Increment the iteration for the next cycle
+  iter := iter + 1
+
+until iter > 8
+
+! Don't forget to close the file at the end
+fclose(F_OUTPUT)
+
+
+
+
+
+end-model

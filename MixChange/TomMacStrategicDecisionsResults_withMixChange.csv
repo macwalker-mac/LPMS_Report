@@ -1,0 +1,17 @@
+Scenario,Total Profit,Total Income,Total Cost
+
+1,54568.5545,175804.5936,121236.0391
+Rent New Warehouse   
+2,51568.5545,175804.5936,124236.0391
+Enter New Contract   
+3,1476.737333,123756.1488,122279.4115
+Rent New Warehouse   Enter New Contract   
+4,-1523.262667,123756.1488,125279.4115
+Increase Production Capacity   
+5,54084.22864,175804.5936,121720.365
+Rent New Warehouse   Increase Production Capacity   
+6,51084.22864,175804.5936,124720.365
+Enter New Contract   Increase Production Capacity   
+7,525.6784273,123756.1488,123230.4704
+Rent New Warehouse   Enter New Contract   Increase Production Capacity   
+8,-2474.321573,123756.1488,126230.4704
