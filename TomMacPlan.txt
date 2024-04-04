@@ -1,0 +1,3 @@
+PriceChange: 20
+DemandChange: 20
+ProductionCostChange: 0
